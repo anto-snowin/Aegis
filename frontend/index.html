@@ -1,0 +1,638 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Aegis Flow - AI-Powered Emergency Response & Dynamic Traffic Signal Control System">
+    <title>Aegis Flow — Emergency Response System</title>
+
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
+    <!-- Design System -->
+    <link rel="stylesheet" href="/css/main.css">
+</head>
+<body>
+
+    <!-- ═══ Navigation ═══ -->
+    <nav class="nav" id="main-nav">
+        <a href="#/" class="nav-brand">
+            <div class="nav-brand-icon">A</div>
+            <div class="nav-brand-text">Aegis <span>Flow</span></div>
+        </a>
+
+        <ul class="nav-links" id="nav-links">
+            <li><a href="#/" class="nav-link" data-page="landing">Home</a></li>
+            <li><a href="#/emergency" class="nav-link" data-page="emergency">🚨 Emergency</a></li>
+            <li><a href="#/driver" class="nav-link" data-page="driver">🚑 Driver</a></li>
+            <li><a href="#/hospital/dashboard" class="nav-link" data-page="hospital">🏥 Command Center</a></li>
+            <li><a href="#/hospital/ai" class="nav-link" data-page="ai">🧠 AI Decisions</a></li>
+            <li><a href="#/traffic/signals" class="nav-link" data-page="signals">🚦 Signals</a></li>
+            <li><a href="#/settings" class="nav-link" data-page="settings">⚙️ Settings</a></li>
+        </ul>
+
+        <div class="nav-user">
+            <div class="nav-status" id="system-status">
+                <span class="dot"></span>
+                <span id="status-text">System Online</span>
+            </div>
+            <button class="btn btn-sm btn-secondary" id="login-btn" onclick="showLogin()">Login</button>
+        </div>
+    </nav>
+
+    <!-- ═══ Toast Notifications ═══ -->
+    <div class="toast-container" id="toast-container"></div>
+
+    <!-- ═══ Main Content Area ═══ -->
+    <main class="main-content" id="app">
+
+        <!-- ── Landing Page ── -->
+        <div class="page active" id="page-landing">
+            <div class="hero">
+                <div class="hero-badge">⚡ AI-Powered Emergency Response</div>
+                <h1 class="hero-title">
+                    Every Second Counts.<br>
+                    <span class="highlight">Aegis Flow Delivers.</span>
+                </h1>
+                <p class="hero-subtitle">
+                    Intelligent emergency coordination that connects patients, ambulances,
+                    traffic signals, and hospitals — powered by real-time AI decision-making.
+                </p>
+                <div class="hero-actions">
+                    <button class="btn btn-primary btn-lg emergency-pulse" onclick="navigate('/emergency')">
+                        🚨 Request Emergency
+                    </button>
+                    <button class="btn btn-secondary btn-lg" onclick="navigate('/hospital/dashboard')">
+                        📊 Command Center
+                    </button>
+                    <button class="btn btn-secondary btn-lg" onclick="navigate('/driver')">
+                        🚑 Driver Dashboard
+                    </button>
+                </div>
+                <div class="hero-disclaimer">
+                    ⚠️ This is a college hackathon prototype. NOT connected to real emergency services.
+                </div>
+            </div>
+
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <div class="feature-icon red">🚨</div>
+                    <div class="feature-title">Instant Emergency Request</div>
+                    <div class="feature-desc">Submit emergencies with GPS location, severity classification, and automatic ambulance assignment.</div>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon green">🚑</div>
+                    <div class="feature-title">Live Ambulance Tracking</div>
+                    <div class="feature-desc">Real-time GPS tracking with moving map, ETA predictions, and route visualization.</div>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon blue">🧠</div>
+                    <div class="feature-title">AI Decision Engine</div>
+                    <div class="feature-desc">Explainable priority scoring, traffic density analysis, and intelligent route selection.</div>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon amber">🚦</div>
+                    <div class="feature-title">Moving Signal Corridor</div>
+                    <div class="feature-desc">Dynamic traffic signal priority that follows the ambulance intersection by intersection.</div>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon red">🏥</div>
+                    <div class="feature-title">Hospital Coordination</div>
+                    <div class="feature-desc">Hospital command center with ETA updates, bed availability, and arrival notifications.</div>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon green">🔌</div>
+                    <div class="feature-title">IoT Hardware Demo</div>
+                    <div class="feature-desc">ESP32-controlled physical traffic signals with MQTT communication and LED demonstration.</div>
+                </div>
+            </div>
+
+            <!-- System Stats -->
+            <div class="container mt-lg">
+                <div class="grid-4" id="landing-stats">
+                    <div class="stat-card">
+                        <div class="stat-label">Active Emergencies</div>
+                        <div class="stat-value red" id="stat-emergencies">0</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Available Ambulances</div>
+                        <div class="stat-value green" id="stat-ambulances">0</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Online Signals</div>
+                        <div class="stat-value amber" id="stat-signals">0</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">System Status</div>
+                        <div class="stat-value blue" id="stat-status">—</div>
+                        <div class="stat-detail" id="stat-mode">Loading...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ── Emergency Request Page ── -->
+        <div class="page" id="page-emergency">
+            <div class="container">
+                <div class="page-header">
+                    <h1 class="page-title">🚨 Emergency Request</h1>
+                    <p class="page-subtitle">Submit an emergency assistance request</p>
+                </div>
+                <div class="split-layout">
+                    <div>
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="card-title">Emergency Details</div>
+                            </div>
+                            <form id="emergency-form" onsubmit="submitEmergency(event)">
+                                <div class="form-group">
+                                    <label class="form-label">Emergency Type *</label>
+                                    <select class="form-select" id="em-type" required>
+                                        <option value="">Select type...</option>
+                                        <option value="cardiac">❤️ Cardiac Emergency</option>
+                                        <option value="accident">🚗 Road Accident</option>
+                                        <option value="stroke">🧠 Stroke</option>
+                                        <option value="breathing">🫁 Breathing Difficulty</option>
+                                        <option value="burn">🔥 Burn Injury</option>
+                                        <option value="pregnancy">🤰 Pregnancy Emergency</option>
+                                        <option value="other">📋 Other</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Severity *</label>
+                                    <select class="form-select" id="em-severity" required>
+                                        <option value="critical">🔴 Critical — Life threatening</option>
+                                        <option value="high" selected>🟠 High — Urgent</option>
+                                        <option value="medium">🟡 Medium — Serious</option>
+                                        <option value="low">🟢 Low — Non-critical</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Patient Name</label>
+                                    <input type="text" class="form-input" id="em-name" placeholder="Patient name (optional)">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Contact Phone</label>
+                                    <input type="tel" class="form-input" id="em-phone" placeholder="+91-XXXXXXXXXX">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Description</label>
+                                    <textarea class="form-textarea" id="em-desc" placeholder="Describe the emergency situation..."></textarea>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Location *</label>
+                                    <div class="flex gap-sm mb-md">
+                                        <button type="button" class="btn btn-secondary" onclick="detectLocation()">📍 Detect My Location</button>
+                                        <span class="text-sm text-muted items-center flex" id="location-status">No location set</span>
+                                    </div>
+                                    <div class="grid-2 gap-sm">
+                                        <input type="number" step="any" class="form-input" id="em-lat" placeholder="Latitude" required>
+                                        <input type="number" step="any" class="form-input" id="em-lng" placeholder="Longitude" required>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Address</label>
+                                    <input type="text" class="form-input" id="em-address" placeholder="Street address (optional)">
+                                </div>
+                                <button type="submit" class="btn btn-primary btn-lg w-full" id="em-submit-btn">
+                                    🚨 Submit Emergency Request
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="card-title">📍 Select Location on Map</div>
+                            </div>
+                            <div class="map-container" id="emergency-map"></div>
+                            <p class="text-sm text-muted mt-sm">Click on the map to set the emergency location</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ── Emergency Status Page ── -->
+        <div class="page" id="page-status">
+            <div class="container">
+                <div class="page-header">
+                    <h1 class="page-title">📋 Emergency Status</h1>
+                    <p class="page-subtitle">Track your emergency request</p>
+                </div>
+                <div class="split-layout">
+                    <div>
+                        <div class="card" id="status-card">
+                            <div class="card-header">
+                                <div class="card-title">Request Details</div>
+                                <span class="badge badge-neutral" id="status-badge">—</span>
+                            </div>
+                            <div class="card-body" id="status-details">
+                                <div class="loading-overlay"><div class="spinner"></div> Loading...</div>
+                            </div>
+                        </div>
+                        <div class="card mt-lg" id="status-timeline-card">
+                            <div class="card-header">
+                                <div class="card-title">📋 Timeline</div>
+                            </div>
+                            <div class="timeline" id="status-timeline"></div>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="card">
+                            <div class="card-header"><div class="card-title">🗺️ Live Tracking</div></div>
+                            <div class="map-container large" id="tracking-map"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ── Driver Dashboard ── -->
+        <div class="page" id="page-driver">
+            <div class="container">
+                <div class="page-header">
+                    <h1 class="page-title">🚑 Driver Dashboard</h1>
+                    <p class="page-subtitle">Ambulance driver controls and navigation</p>
+                </div>
+                <div class="grid-4 mb-lg" id="driver-stats">
+                    <div class="stat-card">
+                        <div class="stat-label">Status</div>
+                        <div class="stat-value green" id="driver-status">Available</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Ambulance</div>
+                        <div class="stat-value blue" id="driver-vehicle">—</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Speed</div>
+                        <div class="stat-value" id="driver-speed">0 <small>km/h</small></div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">GPS Status</div>
+                        <div id="driver-gps" class="flex items-center gap-sm">
+                            <span class="status-dot warning"></span>
+                            <span class="text-sm">Simulated</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="split-layout">
+                    <div>
+                        <!-- Ambulance selector -->
+                        <div class="card mb-lg">
+                            <div class="card-header">
+                                <div class="card-title">🚑 Select Ambulance</div>
+                            </div>
+                            <select class="form-select" id="driver-ambulance-select" onchange="selectAmbulance(this.value)">
+                                <option value="">Select ambulance...</option>
+                            </select>
+                        </div>
+
+                        <!-- Incoming requests -->
+                        <div class="card mb-lg">
+                            <div class="card-header">
+                                <div class="card-title">📥 Incoming Requests</div>
+                                <span class="badge badge-amber" id="pending-count">0</span>
+                            </div>
+                            <div id="driver-requests">
+                                <p class="text-sm text-muted">No pending requests</p>
+                            </div>
+                        </div>
+
+                        <!-- Active assignment -->
+                        <div class="card" id="active-assignment-card" style="display:none;">
+                            <div class="card-header">
+                                <div class="card-title">🎯 Active Assignment</div>
+                                <span class="badge badge-red">ACTIVE</span>
+                            </div>
+                            <div id="active-assignment"></div>
+                            <div class="flex gap-sm mt-md">
+                                <button class="btn btn-success" onclick="markPickup()">✅ Patient Picked Up</button>
+                                <button class="btn btn-primary" onclick="markComplete()">🏥 Arrived at Hospital</button>
+                            </div>
+                        </div>
+
+                        <!-- GPS Simulation -->
+                        <div class="card mt-lg">
+                            <div class="card-header">
+                                <div class="card-title">📡 GPS Simulation</div>
+                                <button class="btn btn-sm btn-secondary" id="gps-sim-btn" onclick="toggleGpsSimulation()">
+                                    ▶ Start Simulation
+                                </button>
+                            </div>
+                            <p class="text-sm text-muted">Simulates ambulance movement along the route for demonstration</p>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="card">
+                            <div class="card-header"><div class="card-title">🗺️ Route & Navigation</div></div>
+                            <div class="map-container large" id="driver-map"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ── Hospital Command Center ── -->
+        <div class="page" id="page-hospital">
+            <div class="container">
+                <div class="page-header">
+                    <h1 class="page-title">🏥 Emergency Command Center</h1>
+                    <p class="page-subtitle">Monitor all active emergencies and system status</p>
+                </div>
+
+                <div class="grid-4 mb-lg" id="hospital-stats">
+                    <div class="stat-card">
+                        <div class="stat-label">Active Emergencies</div>
+                        <div class="stat-value red" id="h-active">0</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">En Route</div>
+                        <div class="stat-value amber" id="h-enroute">0</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Ambulances Available</div>
+                        <div class="stat-value green" id="h-available">0</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Signals in Emergency</div>
+                        <div class="stat-value amber" id="h-signals">0</div>
+                    </div>
+                </div>
+
+                <div class="split-layout">
+                    <div>
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="card-title">📋 Active Emergencies</div>
+                                <button class="btn btn-sm btn-secondary" onclick="refreshDashboard()">🔄 Refresh</button>
+                            </div>
+                            <div id="emergency-list">
+                                <div class="loading-overlay"><div class="spinner"></div> Loading...</div>
+                            </div>
+                        </div>
+
+                        <div class="card mt-lg">
+                            <div class="card-header">
+                                <div class="card-title">🚑 Ambulance Fleet</div>
+                            </div>
+                            <div id="ambulance-list">
+                                <div class="loading-overlay"><div class="spinner"></div> Loading...</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="card">
+                            <div class="card-header"><div class="card-title">🗺️ System Overview Map</div></div>
+                            <div class="map-container large" id="hospital-map"></div>
+                        </div>
+
+                        <div class="card mt-lg">
+                            <div class="card-header">
+                                <div class="card-title">📊 Recent Events</div>
+                            </div>
+                            <div id="event-log" style="max-height:300px;overflow-y:auto;">
+                                <div class="loading-overlay"><div class="spinner"></div></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ── AI Decision Dashboard ── -->
+        <div class="page" id="page-ai">
+            <div class="container">
+                <div class="page-header">
+                    <h1 class="page-title">🧠 AI Decision Engine</h1>
+                    <p class="page-subtitle">Explainable AI analysis for emergency routing and signal priority</p>
+                </div>
+
+                <div class="grid-4 mb-lg">
+                    <div class="stat-card">
+                        <div class="stat-label">Priority Score</div>
+                        <div class="stat-value red" id="ai-priority">—</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">ETA</div>
+                        <div class="stat-value amber" id="ai-eta">—</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Traffic Density</div>
+                        <div class="stat-value blue" id="ai-density">—</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Data Quality</div>
+                        <div class="stat-value green" id="ai-quality">—</div>
+                    </div>
+                </div>
+
+                <div class="split-layout">
+                    <div>
+                        <div class="card mb-lg">
+                            <div class="card-header">
+                                <div class="card-title">📊 Run AI Analysis</div>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Select Emergency</label>
+                                <select class="form-select" id="ai-emergency-select">
+                                    <option value="">Select active emergency...</option>
+                                </select>
+                            </div>
+                            <button class="btn btn-primary w-full" onclick="runAIAnalysis()">🧠 Run Analysis</button>
+                        </div>
+
+                        <div class="card mb-lg">
+                            <div class="card-header">
+                                <div class="card-title">🎯 Priority Score Breakdown</div>
+                            </div>
+                            <div id="ai-factors">
+                                <p class="text-sm text-muted">Run an analysis to see factor breakdown</p>
+                            </div>
+                        </div>
+
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="card-title">📝 AI Explanation</div>
+                            </div>
+                            <div id="ai-explanation" class="text-sm" style="white-space:pre-wrap;">
+                                No analysis available yet. Select an emergency and run analysis.
+                            </div>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="card mb-lg">
+                            <div class="card-header">
+                                <div class="card-title">🛣️ Route Analysis</div>
+                            </div>
+                            <div class="map-container" id="ai-map"></div>
+                            <div id="ai-route-info" class="mt-sm text-sm text-muted">
+                                Route analysis will appear here
+                            </div>
+                        </div>
+
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="card-title">📜 Decision History</div>
+                            </div>
+                            <div id="ai-history" style="max-height:300px;overflow-y:auto;">
+                                <p class="text-sm text-muted">No decisions recorded yet</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ── Traffic Signal Dashboard ── -->
+        <div class="page" id="page-signals">
+            <div class="container">
+                <div class="page-header">
+                    <h1 class="page-title">🚦 Traffic Signal Control</h1>
+                    <p class="page-subtitle">Monitor and control traffic signal states</p>
+                </div>
+
+                <div class="grid-4 mb-lg">
+                    <div class="stat-card">
+                        <div class="stat-label">Normal</div>
+                        <div class="stat-value green" id="sig-normal">0</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Emergency Priority</div>
+                        <div class="stat-value red" id="sig-emergency">0</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Manual Override</div>
+                        <div class="stat-value amber" id="sig-manual">0</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Offline</div>
+                        <div class="stat-value" id="sig-offline">0</div>
+                    </div>
+                </div>
+
+                <div id="signal-grid" class="grid-2 mb-lg">
+                    <!-- Signal cards rendered dynamically -->
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">📜 Command History</div>
+                    </div>
+                    <div id="signal-history" style="max-height:400px;overflow-y:auto;">
+                        <p class="text-sm text-muted">No commands recorded yet</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ── Settings Page ── -->
+        <div class="page" id="page-settings">
+            <div class="container">
+                <div class="page-header">
+                    <h1 class="page-title">⚙️ System Settings</h1>
+                    <p class="page-subtitle">Configure Aegis Flow prototype behavior</p>
+                </div>
+                <div class="grid-2">
+                    <div class="card">
+                        <div class="card-header"><div class="card-title">🧠 AI Engine</div></div>
+                        <div class="form-group">
+                            <label class="form-label">AI Enabled</label>
+                            <div class="flex items-center gap-sm">
+                                <input type="checkbox" id="setting-ai-enabled" checked>
+                                <label for="setting-ai-enabled" class="text-sm">Enable AI decision engine</label>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Simulation Mode</label>
+                            <div class="flex items-center gap-sm">
+                                <input type="checkbox" id="setting-sim-mode" checked>
+                                <label for="setting-sim-mode" class="text-sm">Use simulated traffic data (no real camera)</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header"><div class="card-title">🚦 Signal Control</div></div>
+                        <div class="form-group">
+                            <label class="form-label">Hardware Mode</label>
+                            <div class="flex items-center gap-sm">
+                                <input type="checkbox" id="setting-hw-mode">
+                                <label for="setting-hw-mode" class="text-sm">Connect to ESP32 hardware (requires MQTT broker)</label>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">All-Red Clearance (ms)</label>
+                            <input type="number" class="form-input" id="setting-clearance" value="2000" min="1000" max="10000">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Command Expiry (seconds)</label>
+                            <input type="number" class="form-input" id="setting-expiry" value="60" min="10" max="300">
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header"><div class="card-title">📡 MQTT Broker</div></div>
+                        <div class="form-group">
+                            <label class="form-label">Broker Host</label>
+                            <input type="text" class="form-input" id="setting-mqtt-host" value="localhost">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Broker Port</label>
+                            <input type="number" class="form-input" id="setting-mqtt-port" value="1883">
+                        </div>
+                        <button class="btn btn-secondary" id="mqtt-test-btn" disabled>Test Connection (requires Mosquitto)</button>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header"><div class="card-title">🔄 Update Intervals</div></div>
+                        <div class="form-group">
+                            <label class="form-label">GPS Update Interval (seconds)</label>
+                            <input type="number" class="form-input" id="setting-gps-interval" value="3" min="1" max="30">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Dashboard Refresh (seconds)</label>
+                            <input type="number" class="form-input" id="setting-refresh-interval" value="5" min="2" max="60">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">GPS Stale Threshold (seconds)</label>
+                            <input type="number" class="form-input" id="setting-gps-stale" value="10" min="5" max="60">
+                        </div>
+                        <button class="btn btn-primary" onclick="saveSettings()">💾 Save Settings</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- ═══ Login Modal ═══ -->
+    <div class="modal-overlay" id="login-modal">
+        <div class="modal">
+            <h2 class="modal-title">🔐 Login to Aegis Flow</h2>
+            <form onsubmit="doLogin(event)">
+                <div class="form-group">
+                    <label class="form-label">Username</label>
+                    <input type="text" class="form-input" id="login-username" placeholder="Enter username" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Password</label>
+                    <input type="password" class="form-input" id="login-password" placeholder="Enter password" required>
+                </div>
+                <button type="submit" class="btn btn-primary w-full">Login</button>
+                <p class="text-sm text-muted text-center mt-md">
+                    Demo: driver1/demo1234, hospital1/demo1234, traffic1/demo1234
+                </p>
+            </form>
+            <button class="btn btn-secondary w-full mt-md" onclick="hideLogin()">Cancel</button>
+        </div>
+    </div>
+
+    <!-- ═══ Scripts ═══ -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="/js/api.js"></script>
+    <script src="/js/app.js"></script>
+
+</body>
+</html>
