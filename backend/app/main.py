@@ -15,24 +15,27 @@ import os
 
 from backend.app.database.db import init_db
 from backend.app.database.seed import seed_database
-from backend.app.api import system, emergencies, ambulances, signals, hospitals
+from backend.app.api import system, emergencies, ambulances, signals, hospitals, ai
 from backend.app.services.websocket_manager import ws_manager
+from backend.app.services.mqtt_service import mqtt_service
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """Initialize database and seed data on startup."""
+    """Initialize database, seed data, and start MQTT service on startup."""
     print("=" * 60)
     print("  AEGIS FLOW - Emergency Response System")
-    print("  ⚠️  PROTOTYPE / DEMO - Not for real emergencies")
+    print("  [!] PROTOTYPE / DEMO - Not for real emergencies")
     print("=" * 60)
     init_db()
     seed_database()
+    mqtt_service.start()
     print("[SERVER] Backend ready at http://localhost:8000")
     print("[SERVER] API docs at http://localhost:8000/docs")
     print("[SERVER] Frontend at http://localhost:8000")
     yield
     print("[SERVER] Shutting down Aegis Flow...")
+    mqtt_service.stop()
 
 
 app = FastAPI(
@@ -60,6 +63,7 @@ app.include_router(emergencies.router, prefix="/api")
 app.include_router(ambulances.router, prefix="/api")
 app.include_router(signals.router, prefix="/api")
 app.include_router(hospitals.router, prefix="/api")
+app.include_router(ai.router, prefix="/api")
 
 
 # ─── WebSocket Endpoints ──────────────────────────────

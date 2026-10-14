@@ -17,6 +17,7 @@ from backend.app.schemas.schemas import (
     SignalResponse, SignalCommandCreate, SignalCommandResponse, SignalOverride
 )
 from backend.app.services.websocket_manager import ws_manager
+from backend.app.services.mqtt_service import mqtt_service
 
 router = APIRouter(prefix="/signals", tags=["Traffic Signals"])
 
@@ -113,6 +114,14 @@ async def send_command(
         "command_id": command.id,
     })
 
+    # Publish MQTT command to ESP32 / IoT controller
+    mqtt_service.publish_signal_command(
+        signal_id=signal_id,
+        state=data.requested_state.value,
+        phase=data.requested_phase.value if data.requested_phase else "GREEN",
+        duration_sec=data.expiry_seconds,
+    )
+
     return command
 
 
@@ -171,6 +180,14 @@ async def override_signal(
         "state": signal.state.value,
         "manual_override": signal.manual_override,
         "action": data.action,
+    })
+
+    mqtt_service.publish(f"aegis/signals/{signal_id}/override", {
+        "signal_id": signal_id,
+        "state": signal.state.value,
+        "manual_override": signal.manual_override,
+        "action": data.action,
+        "timestamp": datetime.now(timezone.utc).isoformat(),
     })
 
     return signal

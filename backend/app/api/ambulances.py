@@ -15,6 +15,8 @@ from backend.app.models.models import (
 )
 from backend.app.schemas.schemas import AmbulanceResponse, LocationUpdate
 from backend.app.services.websocket_manager import ws_manager
+from backend.app.services.mqtt_service import mqtt_service
+from backend.app.ai.corridor_controller import CorridorController
 
 router = APIRouter(prefix="/ambulances", tags=["Ambulances"])
 
@@ -136,7 +138,7 @@ async def update_location(
     db.commit()
     db.refresh(ambulance)
 
-    # Broadcast location update
+    # Broadcast location update via WebSocket
     await ws_manager.send_to_channel("tracking", {
         "type": "location_update",
         "ambulance_id": ambulance_id,
@@ -146,6 +148,28 @@ async def update_location(
         "heading": data.heading,
         "timestamp": now.isoformat(),
     })
+
+    # Publish MQTT telemetry for IoT nodes
+    mqtt_service.publish_ambulance_gps(
+        ambulance_id=ambulance_id,
+        lat=data.latitude,
+        lon=data.longitude,
+        speed_kmh=data.speed_kmh or 0.0,
+        heading=data.heading or 0.0,
+    )
+
+    # Evaluate dynamic green corridor along ambulance path
+    try:
+        await CorridorController.process_ambulance_movement(
+            ambulance_id=ambulance_id,
+            current_lat=data.latitude,
+            current_lon=data.longitude,
+            speed_kmh=data.speed_kmh or 35.0,
+            db=db,
+            mqtt_publisher=mqtt_service.publish,
+        )
+    except Exception as e:
+        print(f"[CORRIDOR-ERR] Failed processing corridor movement: {e}")
 
     return ambulance
 

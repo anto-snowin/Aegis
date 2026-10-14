@@ -5,14 +5,12 @@ All data is clearly labelled as simulated/demo.
 """
 
 from datetime import datetime, timezone
-from passlib.context import CryptContext
+from backend.app.services.auth import hash_password
 from backend.app.database.db import SessionLocal, init_db
 from backend.app.models.models import (
     User, Ambulance, Hospital, TrafficSignal, UserRole,
     AmbulanceStatus, SignalState, SignalPhase
 )
-
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 
 def seed_database():
@@ -33,7 +31,7 @@ def seed_database():
             User(
                 id="user-patient-001",
                 username="patient1",
-                hashed_password=pwd_context.hash("demo1234"),
+                hashed_password=hash_password("demo1234"),
                 full_name="Rahul Sharma",
                 role=UserRole.PATIENT,
                 phone="+91-9876543210",
@@ -41,7 +39,7 @@ def seed_database():
             User(
                 id="user-driver-001",
                 username="driver1",
-                hashed_password=pwd_context.hash("demo1234"),
+                hashed_password=hash_password("demo1234"),
                 full_name="Amit Kumar",
                 role=UserRole.DRIVER,
                 phone="+91-9876543211",
@@ -49,7 +47,7 @@ def seed_database():
             User(
                 id="user-driver-002",
                 username="driver2",
-                hashed_password=pwd_context.hash("demo1234"),
+                hashed_password=hash_password("demo1234"),
                 full_name="Priya Singh",
                 role=UserRole.DRIVER,
                 phone="+91-9876543212",
@@ -57,7 +55,7 @@ def seed_database():
             User(
                 id="user-hospital-001",
                 username="hospital1",
-                hashed_password=pwd_context.hash("demo1234"),
+                hashed_password=hash_password("demo1234"),
                 full_name="City Hospital Command",
                 role=UserRole.HOSPITAL,
                 phone="+91-9876543213",
@@ -65,7 +63,7 @@ def seed_database():
             User(
                 id="user-traffic-001",
                 username="traffic1",
-                hashed_password=pwd_context.hash("demo1234"),
+                hashed_password=hash_password("demo1234"),
                 full_name="Traffic Control Operator",
                 role=UserRole.TRAFFIC,
                 phone="+91-9876543214",
@@ -73,7 +71,7 @@ def seed_database():
             User(
                 id="user-admin-001",
                 username="admin",
-                hashed_password=pwd_context.hash("admin1234"),
+                hashed_password=hash_password("admin1234"),
                 full_name="System Administrator",
                 role=UserRole.ADMIN,
             ),
@@ -81,6 +79,7 @@ def seed_database():
 
         for user in users:
             db.add(user)
+        db.flush()
 
         # ─── Hospitals (Demo locations in Pune, India) ─
         hospitals = [
@@ -118,6 +117,7 @@ def seed_database():
 
         for hospital in hospitals:
             db.add(hospital)
+        db.flush()
 
         # ─── Ambulances ────────────────────────────────
         ambulances = [
@@ -154,6 +154,7 @@ def seed_database():
 
         for ambulance in ambulances:
             db.add(ambulance)
+        db.flush()
 
         # ─── Traffic Signals (Demo intersections along a route) ─
         signals = [
@@ -215,7 +216,7 @@ def seed_database():
             db.add(signal)
 
         db.commit()
-        print("[SEED] ✅ Database seeded successfully!")
+        print("[SEED] [OK] Database seeded successfully!")
         print(f"  - {len(users)} users (login: any username / demo1234)")
         print(f"  - {len(hospitals)} hospitals")
         print(f"  - {len(ambulances)} ambulances")
@@ -223,7 +224,7 @@ def seed_database():
 
     except Exception as e:
         db.rollback()
-        print(f"[SEED] ❌ Error seeding database: {e}")
+        print(f"[SEED] [ERROR] Error seeding database: {e}")
         raise
     finally:
         db.close()

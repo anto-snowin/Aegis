@@ -70,7 +70,8 @@ def get_me(user: User = Depends(require_auth)):
     return UserResponse.model_validate(user)
 
 
-# ─── System Health ─────────────────────────────────────
+from backend.app.services.mqtt_service import mqtt_service
+
 
 @router.get("/system/health", response_model=HealthResponse, tags=["System"])
 def health_check(db: Session = Depends(get_db)):
@@ -99,11 +100,13 @@ def health_check(db: Session = Depends(get_db)):
         available_ambulances = 0
         db_status = "error"
 
+    mqtt_status = "connected" if mqtt_service.is_connected else ("simulation" if mqtt_service.simulation_mode else "disconnected")
+
     return HealthResponse(
         status="operational",
         version="1.0.0-prototype",
         database=db_status,
-        mqtt="simulation",  # Updated when MQTT connects
+        mqtt=mqtt_status,
         ai_enabled=True,
         simulation_mode=True,
         active_emergencies=active_emergencies,
